@@ -8,16 +8,21 @@ from typing import Any
 
 import httpx
 
+from astrbot.api import logger
+
 API_URL = "https://openspeech.bytedance.com/api/v3/tts/create"
 DEFAULT_MODEL = "seed-audio-1.0"
 
 
 class SeedAudioError(Exception):
-    def __init__(self, code: int, message: str, logid: str | None = None):
+    def __init__(self, code: int | None, message: str, logid: str | None = None):
         self.code = code
         self.message = message
         self.logid = logid
-        super().__init__(f"[{code}] {message}" + (f" (logid={logid})" if logid else ""))
+        code_text = "?" if code is None else str(code)
+        super().__init__(
+            f"[{code_text}] {message}" + (f" (logid={logid})" if logid else "")
+        )
 
 
 class SeedAudioClient:
@@ -36,18 +41,17 @@ class SeedAudioClient:
         payload: dict[str, Any] = {
             "model": self.model,
             "text_prompt": text_prompt,
+            "watermark": watermark if watermark is not None else {},
         }
         if references:
             payload["references"] = references
         if audio_config:
             payload["audio_config"] = audio_config
-        if watermark:
-            payload["watermark"] = watermark
 
         headers = {
+            "Content-Type": "application/json",
             "X-Api-Key": self.api_key,
             "X-Api-Request-Id": str(uuid.uuid4()),
-            "Content-Type": "application/json",
         }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -63,11 +67,34 @@ class SeedAudioClient:
                 logid,
             ) from exc
 
-        code = data.get("code", response.status_code)
-        if code != 0 or response.status_code != 200:
+        if response.status_code != 200:
+            raise SeedAudioError(
+                response.status_code,
+                data.get("message", response.text[:200] or "HTTP 请求失败"),
+                logid,
+            )
+
+        code = data.get("code")
+        if code not in (None, 0):
             raise SeedAudioError(code, data.get("message", "未知错误"), logid)
 
+        if not (data.get("audio") or data.get("data")):
+            raise SeedAudioError(
+                code,
+                data.get("message", "响应中未包含音频数据"),
+                logid,
+            )
+
+        if logid:
+            logger.debug(f"[seed-audio] X-Tt-Logid: {logid}")
         return data
+
+    @staticmethod
+    def extract_audio_base64(data: dict[str, Any]) -> str:
+        audio_b64 = data.get("audio") or data.get("data")
+        if not audio_b64:
+            raise SeedAudioError(0, "响应中未包含音频数据")
+        return audio_b64
 
     @staticmethod
     def file_to_base64(path: str) -> str:
@@ -76,9 +103,7 @@ class SeedAudioClient:
 
     @staticmethod
     def save_audio(data: dict[str, Any], output_path: str) -> str:
-        audio_b64 = data.get("audio")
-        if not audio_b64:
-            raise SeedAudioError(0, "响应中未包含音频数据")
+        audio_b64 = SeedAudioClient.extract_audio_base64(data)
         with open(output_path, "wb") as f:
             f.write(base64.b64decode(audio_b64))
         return output_path

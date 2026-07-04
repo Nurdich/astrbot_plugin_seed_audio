@@ -15,7 +15,7 @@ from .seed_audio_api import SeedAudioClient, SeedAudioError
 
 
 def get_api_key(config: AstrBotConfig) -> str:
-    return (config.get("X-Api-Key") or "").strip()
+    return (config.get("api_key") or config.get("X-Api-Key") or "").strip()
 
 
 def build_client(config: AstrBotConfig) -> SeedAudioClient:

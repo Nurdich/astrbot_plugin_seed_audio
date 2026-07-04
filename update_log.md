@@ -2,6 +2,22 @@
 
 ## 2026-07-04
 
+### v1.0.6 对齐官方 API 示例
+
+- 成功响应：`code` 为 `None` 或 `0` 均视为成功（原先把 `None` 当失败）
+- 音频数据：兼容 `audio` 与 `data` 两个字段（与官方 `save_base64_audio` 一致）
+- 请求体默认附带 `watermark: {}`
+- 错误时记录 `X-Tt-Logid` 便于排查
+
+### v1.0.5 修复 WebChat 指令无响应与 API Key 读取错误
+
+- **根因 1**：`get_api_key()` 误读 `X-Api-Key`，WebUI 配置的 `api_key` 始终为空，合成必失败
+- **根因 2**：WebChat 下 `/seedtts`、`/seedaudio_ping` 可能未进入 `@filter.command` 链路，直接走 Agent 流式输出
+- 新增 `@filter.event_message_type(ALL, priority=100)` 兜底拦截器
+- 指令处理完成后再 `stop_event()` + `should_call_llm(False)`
+- `add_llm_tools` 失败时仅记录错误，不阻断插件加载
+- 新增 `CHANGELOG.md`（AstrBot WebUI 只认此文件名，内容与本文同步）
+
 ### 防止 Agent 使用百度 TTS 外链
 
 - LLM 工具更名为 `seed_audio_tts`，强化描述，明确禁止 `send_message_to_user` + 第三方 URL
