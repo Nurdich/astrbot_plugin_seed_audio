@@ -51,11 +51,36 @@ Agent 会调用该工具合成并发送语音。可在插件配置中关闭 `ena
 
 ## 排查指令不生效
 
-1. WebUI → **插件**：确认 `astrbot_plugin_seed_audio` 已启用且无报错
-2. WebUI → **指令管理**：搜索 `seedtts`，确认指令已启用
-3. WebUI → **控制台**：确认无 `ModuleNotFoundError`，必要时手动安装 `httpx`
-4. 插件目录名必须是 `astrbot_plugin_seed_audio`（不能含连字符）
-5. 修改代码后点击 **重载插件**
+**第一步：确认插件已加载**
+
+```
+/seedaudio_ping
+```
+
+若返回 `Seed Audio 插件运行正常`，说明插件已加载；若仍走 LLM 回复，说明**插件根本没装上**。
+
+1. WebUI → **插件**：`astrbot_plugin_seed_audio` 无红色报错，状态为已启用
+2. 目录必须是 `AstrBot/data/plugins/astrbot_plugin_seed_audio`（**不能**是 `seed-audio`）
+3. WebUI → **控制台**：无 `ModuleNotFoundError`，手动安装 `httpx`
+4. 修改代码后 **重载插件**，必要时重启 AstrBot
+
+**第二步：确认 LLM 工具已注册**
+
+1. WebUI → **工具** 页面，搜索 `seed_audio_synthesize`
+2. 若找不到，说明插件未加载或 `enable_llm_tool=false`
+3. 当前人格（Persona）的 `tools` 不能是空列表 `[]`，否则 Agent 看不到任何工具
+
+**第三步：合成语音**
+
+```
+/seedtts 下雨了
+```
+
+或自然语言：
+
+```
+帮我生成一段语音，大声说我爱你
+```
 
 - 附带语音消息 → 参考音频模式（最多 3 条，每条 ≤30s）
 - 附带图片消息 → 参考图片模式（最多 1 张）

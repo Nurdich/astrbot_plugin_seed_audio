@@ -2,7 +2,11 @@
 
 ## 2026-07-04
 
-### 集成 AstrBot LLM Tool（AI 指南）
+### 修复插件与 Agent 均未生效的问题
+
+- LLM 工具改为官方推荐的 `FunctionTool` + `add_llm_tools()` 注册
+- 新增 `/seedaudio_ping` 诊断指令，用于确认插件是否加载
+- 抽取 `seed_audio_service.py` 供指令与工具共用
 
 - 按 [AI 开发指南](https://docs.astrbot.app/dev/star/guides/ai.html) 注册 `seed_audio_synthesize` 工具
 - Agent 可在对话中主动调用语音合成，无需记忆 `/seedtts` 指令
