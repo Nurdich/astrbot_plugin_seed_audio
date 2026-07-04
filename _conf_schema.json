@@ -1,0 +1,57 @@
+{
+  "api_key": {
+    "type": "string",
+    "description": "火山引擎语音合成 API Key",
+    "hint": "从控制台 > API Key 管理获取，对应请求头 X-Api-Key",
+    "obvious_hint": true
+  },
+  "speaker": {
+    "type": "string",
+    "description": "默认音色 ID",
+    "hint": "纯文本/音色合成时使用，参考音频模式可留空。可使用豆包语音合成 2.0 音色或声音复刻音色",
+    "default": ""
+  },
+  "audio_config": {
+    "type": "object",
+    "description": "输出音频配置",
+    "items": {
+      "format": {
+        "type": "string",
+        "description": "输出格式",
+        "options": ["wav", "mp3", "pcm", "ogg_opus"],
+        "default": "wav"
+      },
+      "sample_rate": {
+        "type": "int",
+        "description": "采样率",
+        "options": [8000, 16000, 24000, 32000, 44100, 48000],
+        "default": 24000
+      },
+      "speech_rate": {
+        "type": "int",
+        "description": "语速 [-50, 100]，0 为默认",
+        "default": 0
+      },
+      "loudness_rate": {
+        "type": "int",
+        "description": "音量 [-50, 100]，0 为默认",
+        "default": 0
+      },
+      "pitch_rate": {
+        "type": "int",
+        "description": "音调 [-12, 12]，0 为默认",
+        "default": 0
+      },
+      "enable_subtitle": {
+        "type": "bool",
+        "description": "是否返回字级别时间戳字幕",
+        "default": false
+      }
+    }
+  },
+  "request_timeout": {
+    "type": "int",
+    "description": "API 请求超时时间（秒）",
+    "default": 180
+  }
+}
