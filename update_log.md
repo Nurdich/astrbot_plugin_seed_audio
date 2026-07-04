@@ -15,4 +15,8 @@
 - `main.py` — AstrBot 插件主逻辑
 - `seed_audio_api.py` — API 客户端封装
 - `_conf_schema.json` — 插件配置 Schema
-- `requirements.txt` — 依赖（httpx）
+- 修复 AstrBot 加载时 `No module named 'seed_audio_api'`：改用相对导入 `from .seed_audio_api`
+
+### 新增模型配置
+
+- 插件配置增加 `model` 字段，默认 `seed-audio-1.0`

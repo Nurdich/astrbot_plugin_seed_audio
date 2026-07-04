@@ -32,6 +32,7 @@
 | 配置 | 说明 |
 |------|------|
 | api_key | 火山引擎 X-Api-Key |
+| model | 模型版本，默认 `seed-audio-1.0` |
 | speaker | 默认音色 ID（可选） |
 | audio_config | 输出格式、采样率、语速、音量、音调、字幕 |
 | request_timeout | 请求超时（默认 180s） |

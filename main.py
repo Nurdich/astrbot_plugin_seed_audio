@@ -8,7 +8,7 @@ from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.message_components import Image, Record
 from astrbot.api.star import Context, Star, register
 
-from seed_audio_api import SeedAudioClient, SeedAudioError
+from .seed_audio_api import SeedAudioClient, SeedAudioError
 
 
 @register("seed_audio", "seed-audio", "火山引擎 Seed Audio 语音合成插件", "1.0.0")
@@ -94,7 +94,12 @@ class SeedAudioPlugin(Star):
             return
 
         references, warnings = await self._collect_references(event)
-        client = SeedAudioClient(api_key, timeout=float(self.config.get("request_timeout") or 180))
+        model = (self.config.get("model") or "seed-audio-1.0").strip()
+        client = SeedAudioClient(
+            api_key,
+            timeout=float(self.config.get("request_timeout") or 180),
+            model=model,
+        )
 
         try:
             result = await client.create(

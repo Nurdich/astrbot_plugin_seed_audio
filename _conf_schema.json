@@ -5,6 +5,12 @@
     "hint": "从控制台 > API Key 管理获取，对应请求头 X-Api-Key",
     "obvious_hint": true
   },
+  "model": {
+    "type": "string",
+    "description": "模型版本",
+    "hint": "当前仅支持 seed-audio-1.0",
+    "default": "seed-audio-1.0"
+  },
   "speaker": {
     "type": "string",
     "description": "默认音色 ID",

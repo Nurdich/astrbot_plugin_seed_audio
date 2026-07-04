@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 API_URL = "https://openspeech.bytedance.com/api/v3/tts/create"
-MODEL = "seed-audio-1.0"
+DEFAULT_MODEL = "seed-audio-1.0"
 
 
 class SeedAudioError(Exception):
