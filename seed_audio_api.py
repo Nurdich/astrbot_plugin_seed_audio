@@ -21,9 +21,10 @@ class SeedAudioError(Exception):
 
 
 class SeedAudioClient:
-    def __init__(self, api_key: str, timeout: float = 180.0):
+    def __init__(self, api_key: str, timeout: float = 180.0, model: str = DEFAULT_MODEL):
         self.api_key = api_key
         self.timeout = timeout
+        self.model = model or DEFAULT_MODEL
 
     async def create(
         self,
@@ -33,7 +34,7 @@ class SeedAudioClient:
         watermark: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         payload: dict[str, Any] = {
-            "model": MODEL,
+            "model": self.model,
             "text_prompt": text_prompt,
         }
         if references:
