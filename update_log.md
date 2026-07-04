@@ -2,7 +2,10 @@
 
 ## 2026-07-04
 
-### 修复插件与 Agent 均未生效的问题
+### 修复 FunctionTool parameters 校验错误
+
+- `tools/seed_audio_tool.py` 改用 `pydantic.dataclasses.dataclass`，与官方 AI 指南一致
+- 修复 `parameters` 被识别为 `FieldInfo` 导致 Agent 请求失败的问题
 
 - LLM 工具改为官方推荐的 `FunctionTool` + `add_llm_tools()` 注册
 - 新增 `/seedaudio_ping` 诊断指令，用于确认插件是否加载

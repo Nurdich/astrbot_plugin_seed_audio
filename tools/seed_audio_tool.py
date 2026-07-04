@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from pydantic import Field
+from pydantic.dataclasses import dataclass
 
 from astrbot.api import logger
 from astrbot.core.agent.run_context import ContextWrapper
