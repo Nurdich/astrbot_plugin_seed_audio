@@ -1,5 +1,4 @@
 import os
-import tempfile
 import uuid
 
 import astrbot.api.message_components as Comp
@@ -7,11 +6,17 @@ from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.message_components import Image, Record
 from astrbot.api.star import Context, Star, register
+from astrbot.core.utils.astrbot_path import get_astrbot_temp_path
 
 from .seed_audio_api import SeedAudioClient, SeedAudioError
 
 
-@register("seed_audio", "seed-audio", "火山引擎 Seed Audio 语音合成插件", "1.0.0")
+@register(
+    "astrbot_plugin_seed_audio",
+    "seed-audio",
+    "火山引擎 Seed Audio 语音合成插件",
+    "1.0.1",
+)
 class SeedAudioPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -125,7 +130,8 @@ class SeedAudioPlugin(Star):
         else:
             ext = f".{fmt}"
 
-        temp_dir = tempfile.gettempdir()
+        temp_dir = get_astrbot_temp_path()
+        os.makedirs(temp_dir, exist_ok=True)
         output_path = os.path.join(temp_dir, f"seed_audio_{uuid.uuid4().hex}{ext}")
 
         try:
@@ -152,7 +158,7 @@ class SeedAudioPlugin(Star):
         if subtitle_text:
             chain.append(Comp.Plain(subtitle_text))
 
-        chain.append(Comp.Record(file=output_path, url=output_path, text=text_prompt))
+        chain.append(Comp.Record.fromFileSystem(output_path, text=text_prompt))
         yield event.chain_result(chain)
 
     async def terminate(self):

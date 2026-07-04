@@ -2,6 +2,21 @@
 
 ## 2026-07-04
 
+### 对齐 AstrBot 官方插件规范
+
+- `metadata.yaml` 插件名改为 `astrbot_plugin_seed_audio`（推荐 `astrbot_plugin_` 前缀）
+- 临时音频文件改存 `data/temp`（`get_astrbot_temp_path()`）
+- 语音消息改用 `Comp.Record.fromFileSystem()` 发送
+- README 安装步骤与[官方开发指南](https://docs.astrbot.app/dev/star/plugin-new.html)一致
+
+### 新增模型配置
+
+- 插件配置增加 `model` 字段，默认 `seed-audio-1.0`
+
+### 修复导入错误
+
+- 修复 AstrBot 加载时 `No module named 'seed_audio_api'`：改用相对导入 `from .seed_audio_api`
+
 ### 新增 Seed Audio 语音合成插件
 
 - 集成火山引擎 `POST /api/v3/tts/create` 非流式接口
@@ -15,8 +30,4 @@
 - `main.py` — AstrBot 插件主逻辑
 - `seed_audio_api.py` — API 客户端封装
 - `_conf_schema.json` — 插件配置 Schema
-- 修复 AstrBot 加载时 `No module named 'seed_audio_api'`：改用相对导入 `from .seed_audio_api`
-
-### 新增模型配置
-
-- 插件配置增加 `model` 字段，默认 `seed-audio-1.0`
+- `requirements.txt` — 依赖（httpx）

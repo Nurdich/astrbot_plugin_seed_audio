@@ -1,8 +1,10 @@
-# Seed Audio 语音合成插件
+# astrbot_plugin_seed_audio
 
-基于火山引擎 [Seed Audio](https://www.volcengine.com/docs/6561) 非流式语音合成 API 的 AstrBot 插件。
+基于火山引擎 [Seed Audio](https://www.volcengine.com/docs/6561) 非流式语音合成 API 的 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 插件。
 
-支持：
+开发文档：[AstrBot 插件开发指南](https://docs.astrbot.app/dev/star/plugin-new.html)
+
+## 功能
 
 - **纯文本生成**：用自然语言描述所需音效、音色等
 - **参考音频生成**：附带语音消息，文本中可用 `@音频1`、`@音频2` 引用
@@ -11,9 +13,16 @@
 
 ## 安装
 
-1. 将本仓库克隆到 `AstrBot/data/plugins/seed-audio`
-2. 在 AstrBot WebUI 插件管理中重载插件
-3. 在插件配置中填写 **API Key**（[控制台获取](https://console.volcengine.com/speech/new/setting/apikeys)）
+```bash
+git clone https://github.com/AstrBotDevs/AstrBot
+mkdir -p AstrBot/data/plugins
+cd AstrBot/data/plugins
+git clone <本仓库地址> astrbot_plugin_seed_audio
+```
+
+然后在 AstrBot WebUI 插件管理中重载插件，并填写 **API Key**（[控制台获取](https://console.volcengine.com/speech/new/setting/apikeys)）。
+
+> 插件目录名须为合法 Python 标识符（推荐 `astrbot_plugin_seed_audio`），不要使用 `seed-audio` 这类带连字符的名称。
 
 ## 使用
 
@@ -45,4 +54,8 @@
 
 ## 依赖
 
-- httpx
+见 `requirements.txt`（`httpx`）。AstrBot 安装插件时会自动安装。
+
+## 开发调试
+
+修改代码后，在 WebUI 插件管理页点击「重载插件」即可热重载。
