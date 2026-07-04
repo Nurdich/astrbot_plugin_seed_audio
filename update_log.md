@@ -2,6 +2,20 @@
 
 ## 2026-07-04
 
+### 集成 AstrBot LLM Tool（AI 指南）
+
+- 按 [AI 开发指南](https://docs.astrbot.app/dev/star/guides/ai.html) 注册 `seed_audio_synthesize` 工具
+- Agent 可在对话中主动调用语音合成，无需记忆 `/seedtts` 指令
+- 新增配置项 `enable_llm_tool`（默认开启）
+- 抽取 `_synthesize()` 复用指令与工具逻辑
+
+### 修复 /tts 被 LLM 接管的问题
+
+- 指令更名为 `/seedtts`（别名 `seed_tts`、`seedaudio`），避免与 AstrBot 内置 `/tts`（会话 TTS 开关）冲突
+- 文本参数改用 `GreedyStr`，支持带空格的合成内容
+- 指令执行时调用 `event.stop_event()`，防止继续走 LLM 流程
+- README 补充排查步骤
+
 ### 对齐 AstrBot 官方插件规范
 
 - `metadata.yaml` 插件名改为 `astrbot_plugin_seed_audio`（推荐 `astrbot_plugin_` 前缀）
@@ -21,7 +35,7 @@
 
 - 集成火山引擎 `POST /api/v3/tts/create` 非流式接口
 - 支持纯文本、参考音频（`@音频N`）、参考图片三种生成模式
-- 提供 `/tts` 指令，合成后返回语音消息
+- 提供 `/seedtts` 指令（`/tts` 与 AstrBot 内置 TTS 开关冲突，已更名）
 - 插件配置：API Key、默认音色、音频输出参数、请求超时
 - 可选开启字级别字幕并在回复中附带文本
 

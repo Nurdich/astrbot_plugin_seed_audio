@@ -6,6 +6,7 @@ from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.message_components import Image, Record
 from astrbot.api.star import Context, Star, register
+from astrbot.core.star.filter.command import GreedyStr
 from astrbot.core.utils.astrbot_path import get_astrbot_temp_path
 
 from .seed_audio_api import SeedAudioClient, SeedAudioError
@@ -15,7 +16,7 @@ from .seed_audio_api import SeedAudioClient, SeedAudioError
     "astrbot_plugin_seed_audio",
     "seed-audio",
     "火山引擎 Seed Audio 语音合成插件",
-    "1.0.1",
+    "1.0.2",
 )
 class SeedAudioPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
@@ -24,7 +25,21 @@ class SeedAudioPlugin(Star):
 
     async def initialize(self):
         if not self.config.get("api_key"):
-            logger.warning("[seed-audio] 未配置 API Key，/tts 指令将不可用")
+            logger.warning("[seed-audio] 未配置 API Key，语音合成功能将不可用")
+            return
+        logger.info("[seed-audio] 插件已加载：/seedtts 指令，LLM 工具 seed_audio_synthesize")
+        if self.config.get("enable_llm_tool", True):
+            logger.info("[seed-audio] LLM 工具已注册，Agent 可主动调用语音合成")
+
+    def _get_api_key(self) -> str:
+        return (self.config.get("api_key") or "").strip()
+
+    def _build_client(self) -> SeedAudioClient:
+        return SeedAudioClient(
+            self._get_api_key(),
+            timeout=float(self.config.get("request_timeout") or 180),
+            model=(self.config.get("model") or "seed-audio-1.0").strip(),
+        )
 
     def _build_audio_config(self) -> dict:
         cfg = self.config.get("audio_config") or {}
@@ -35,8 +50,15 @@ class SeedAudioPlugin(Star):
                 audio_config[key] = value
         return audio_config
 
+    def _output_ext(self) -> str:
+        fmt = (self.config.get("audio_config") or {}).get("format") or "wav"
+        if fmt == "ogg_opus":
+            return ".ogg"
+        if fmt == "pcm":
+            return ".pcm"
+        return f".{fmt}"
+
     async def _collect_references(self, event: AstrMessageEvent) -> tuple[list[dict], list[str]]:
-        """从消息链提取参考资源，返回 (references, warnings)。"""
         references: list[dict] = []
         warnings: list[str] = []
         audio_count = 0
@@ -80,32 +102,33 @@ class SeedAudioPlugin(Star):
             lines.append(f"[{start}-{end}ms] {sentence.get('text', '')}")
         return "\n".join(lines)
 
-    @filter.command("tts")
-    async def tts(self, event: AstrMessageEvent, text: str = ""):
-        """使用 Seed Audio 合成语音。支持纯文本、参考音频（@音频N）、参考图片模式。"""
-        api_key = (self.config.get("api_key") or "").strip()
+    async def _synthesize(
+        self,
+        event: AstrMessageEvent,
+        text_prompt: str,
+        *,
+        use_message_references: bool = True,
+    ):
+        api_key = self._get_api_key()
         if not api_key:
             yield event.plain_result("请先在插件配置中填写火山引擎 API Key。")
             return
 
-        text_prompt = text.strip()
+        text_prompt = text_prompt.strip()
         if not text_prompt:
-            yield event.plain_result(
-                "用法：/tts <文本或提示词>\n"
-                "参考音频：附带语音并可在文本中使用 @音频1 @音频2\n"
-                "参考图片：附带图片，文本为待合成内容\n"
-                "纯提示词：直接描述所需音效、音色等"
-            )
+            yield event.plain_result("合成文本不能为空。")
             return
 
-        references, warnings = await self._collect_references(event)
-        model = (self.config.get("model") or "seed-audio-1.0").strip()
-        client = SeedAudioClient(
-            api_key,
-            timeout=float(self.config.get("request_timeout") or 180),
-            model=model,
-        )
+        references: list[dict] = []
+        warnings: list[str] = []
+        if use_message_references:
+            references, warnings = await self._collect_references(event)
 
+        speaker = (self.config.get("speaker") or "").strip()
+        if not references and speaker:
+            references.append({"speaker": speaker})
+
+        client = self._build_client()
         try:
             result = await client.create(
                 text_prompt=text_prompt,
@@ -121,18 +144,9 @@ class SeedAudioPlugin(Star):
             yield event.plain_result(f"请求异常：{exc}")
             return
 
-        audio_cfg = self.config.get("audio_config") or {}
-        fmt = audio_cfg.get("format") or "wav"
-        if fmt == "ogg_opus":
-            ext = ".ogg"
-        elif fmt == "pcm":
-            ext = ".pcm"
-        else:
-            ext = f".{fmt}"
-
         temp_dir = get_astrbot_temp_path()
         os.makedirs(temp_dir, exist_ok=True)
-        output_path = os.path.join(temp_dir, f"seed_audio_{uuid.uuid4().hex}{ext}")
+        output_path = os.path.join(temp_dir, f"seed_audio_{uuid.uuid4().hex}{self._output_ext()}")
 
         try:
             client.save_audio(result, output_path)
@@ -160,6 +174,36 @@ class SeedAudioPlugin(Star):
 
         chain.append(Comp.Record.fromFileSystem(output_path, text=text_prompt))
         yield event.chain_result(chain)
+
+    @filter.command("seedtts", alias={"seed_tts", "seedaudio"}, priority=10)
+    async def seedtts(self, event: AstrMessageEvent, text: GreedyStr = ""):
+        """使用 Seed Audio 合成语音。支持纯文本、参考音频（@音频N）、参考图片模式。"""
+        event.stop_event()
+        if not text.strip():
+            yield event.plain_result(
+                "用法：/seedtts <文本或提示词>\n"
+                "参考音频：附带语音并可在文本中使用 @音频1 @音频2\n"
+                "参考图片：附带图片，文本为待合成内容\n"
+                "纯提示词：直接描述所需音效、音色等\n"
+                "也可直接对话说「帮我生成语音」，由 Agent 调用合成工具\n"
+                "注意：/tts 是 AstrBot 内置的 TTS 开关指令，与本插件无关"
+            )
+            return
+        async for result in self._synthesize(event, text):
+            yield result
+
+    @filter.llm_tool(name="seed_audio_synthesize")
+    async def seed_audio_synthesize(self, event: AstrMessageEvent, text: str):
+        """使用火山引擎 Seed Audio 合成语音并发送给用户。
+
+        Args:
+            text(string): 待合成文本，或描述所需音效、音色、语气的提示词
+        """
+        if not self.config.get("enable_llm_tool", True):
+            yield event.plain_result("插件未启用 LLM 工具，请使用 /seedtts 指令。")
+            return
+        async for result in self._synthesize(event, text):
+            yield result
 
     async def terminate(self):
         pass

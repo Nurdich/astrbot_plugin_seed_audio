@@ -59,5 +59,11 @@
     "type": "int",
     "description": "API 请求超时时间（秒）",
     "default": 180
+  },
+  "enable_llm_tool": {
+    "type": "bool",
+    "description": "是否注册 LLM 工具，允许 Agent 在对话中主动调用语音合成",
+    "hint": "参考 AstrBot AI 开发指南中的 Tool 注册方式",
+    "default": true
   }
 }
