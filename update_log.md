@@ -2,6 +2,12 @@
 
 ## 2026-07-04
 
+### 防止 Agent 使用百度 TTS 外链
+
+- LLM 工具更名为 `seed_audio_tts`，强化描述，明确禁止 `send_message_to_user` + 第三方 URL
+- 新增 `on_llm_request` 钩子注入 TTS 策略提示（配置项 `inject_tts_hint`）
+- 说明：Agent 走百度是因为调用了内置发消息工具，而非 Seed Audio API
+
 ### 修复 FunctionTool parameters 校验错误
 
 - `tools/seed_audio_tool.py` 改用 `pydantic.dataclasses.dataclass`，与官方 AI 指南一致

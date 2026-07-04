@@ -10,7 +10,7 @@
 ## 功能
 
 - **指令合成**：`/seedtts <文本>` 直接生成语音
-- **Agent 工具**：注册 `seed_audio_synthesize` 工具，对话中说「帮我生成一段语音」时 Agent 可主动调用
+- **Agent 工具**：注册 `seed_audio_tts` 工具，对话中说「帮我生成一段语音」时 Agent 可主动调用
 - **纯文本生成**：用自然语言描述所需音效、音色等
 - **参考音频生成**：附带语音消息，文本中可用 `@音频1`、`@音频2` 引用
 - **参考图片生成**：附带图片，文本为待合成内容
@@ -41,13 +41,15 @@ git clone <本仓库地址> astrbot_plugin_seed_audio
 
 ### 对话中让 Agent 合成语音
 
-插件按 [AI 指南](https://docs.astrbot.app/dev/star/guides/ai.html) 注册了 LLM 工具 `seed_audio_synthesize`。可直接说：
+插件按 [AI 指南](https://docs.astrbot.app/dev/star/guides/ai.html) 注册了 LLM 工具 `seed_audio_tts`。可直接说：
 
 ```
 帮我生成一段语音，大声说我爱你
 ```
 
-Agent 会调用该工具合成并发送语音。可在插件配置中关闭 `enable_llm_tool`。
+Agent 会调用 `seed_audio_tts` 工具合成并发送语音。可在插件配置中关闭 `enable_llm_tool`。
+
+> **为何会出现百度 TTS？** Agent 未调用 Seed Audio 时，可能改用 AstrBot 内置 `send_message_to_user` 并自行拼接 `tts.baidu.com` 等外链。插件已默认开启 `inject_tts_hint` 约束该行为；合成语音请优先用 `/seedtts` 指令。
 
 ## 排查指令不生效
 
@@ -66,7 +68,7 @@ Agent 会调用该工具合成并发送语音。可在插件配置中关闭 `ena
 
 **第二步：确认 LLM 工具已注册**
 
-1. WebUI → **工具** 页面，搜索 `seed_audio_synthesize`
+1. WebUI → **工具** 页面，搜索 `seed_audio_tts`
 2. 若找不到，说明插件未加载或 `enable_llm_tool=false`
 3. 当前人格（Persona）的 `tools` 不能是空列表 `[]`，否则 Agent 看不到任何工具
 
@@ -96,6 +98,7 @@ Agent 会调用该工具合成并发送语音。可在插件配置中关闭 `ena
 | audio_config | 输出格式、采样率、语速、音量、音调、字幕 |
 | request_timeout | 请求超时（默认 180s） |
 | enable_llm_tool | 是否注册 LLM 工具供 Agent 调用（默认开启） |
+| inject_tts_hint | 是否注入 TTS 策略提示，防止 Agent 使用百度等外链（默认开启） |
 
 ## 限制
 

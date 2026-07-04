@@ -24,10 +24,13 @@ if TYPE_CHECKING:
 class SeedAudioSynthesizeTool(FunctionTool[AstrAgentContext]):
     """按 AstrBot AI 指南通过 add_llm_tools 注册。"""
 
-    name: str = "seed_audio_synthesize"
+    name: str = "seed_audio_tts"
     description: str = (
-        "使用火山引擎 Seed Audio 将文本合成为语音并发送给用户。"
-        "当用户要求生成语音、朗读文字、TTS、文字转语音时调用此工具。"
+        "[语音合成专用] 使用火山引擎 Seed Audio API 将文本合成为语音并发送给用户。"
+        "凡是用户要求 TTS、文字转语音、生成语音、朗读、配音，必须调用本工具，"
+        "传入 text 参数即可。"
+        "禁止改用 send_message_to_user 发送语音，"
+        "禁止拼接百度 TTS、讯飞或任何第三方语音 URL。"
     )
     parameters: dict = Field(
         default_factory=lambda: {
