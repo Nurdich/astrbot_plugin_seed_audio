@@ -2,6 +2,12 @@
 
 ## 2026-07-04
 
+### v1.0.7 修复 WebChat 指令走 Agent 流式输出
+
+- **根因**：WebChat ChatUI 常不经过插件 `@filter.command` 管道，直接进入 Agent；`should_call_llm(False)` 语义写反，无法阻止 LLM
+- 新增 `on_llm_request(priority=200)` 钩子，在 Agent 调用 LLM 前拦截 `/seedtts`、`/seedaudio_ping`
+- 指令结束后改为 `should_call_llm(True)` 禁止默认 LLM 请求
+
 ### v1.0.6 对齐官方 API 示例
 
 - 成功响应：`code` 为 `None` 或 `0` 均视为成功（原先把 `None` 当失败）

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.7 (2026-07-04)
+
+- 修复 WebChat 下 `/seedtts`、`/seedaudio_ping` 被 Agent 接管的问题
+- 通过 `on_llm_request` 钩子在 LLM 请求前拦截指令
+- 修正 `should_call_llm(True)` 以禁止默认 Agent 流程
+
 ## v1.0.6 (2026-07-04)
 
 - 对齐官方示例：成功判定 `code in (None, 0)`，音频字段兼容 `audio` / `data`

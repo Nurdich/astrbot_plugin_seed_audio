@@ -2,7 +2,7 @@ name: astrbot_plugin_seed_audio
 display_name: Seed Audio 语音合成
 desc: 基于火山引擎 Seed Audio API 的语音合成插件，支持纯文本、参考音频、参考图片生成。
 short_desc: 火山引擎 Seed Audio 非流式语音合成
-version: v1.0.6
+version: v1.0.7
 author: seed-audio
 repo: https://github.com/nurdich/astrbot_plugin_seed_audio
 astrbot_version: ">=4.5.0"

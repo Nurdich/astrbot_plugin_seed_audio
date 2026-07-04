@@ -9,7 +9,7 @@ from astrbot.core.star.filter.command import GreedyStr
 from .seed_audio_service import collect_references, get_api_key, synthesize_text
 from .tools.seed_audio_tool import SeedAudioSynthesizeTool
 
-PLUGIN_VERSION = "1.0.6"
+PLUGIN_VERSION = "1.0.7"
 TTS_COMMANDS = ("seedtts", "seed_tts", "seedaudio")
 WAKE_PREFIXES = ("/", "！", "!")
 
@@ -32,6 +32,19 @@ def _match_tts_text(text: str) -> str | None:
         if normalized.startswith(f"{cmd} "):
             return normalized[len(cmd) :].strip()
     return None
+
+
+def _parse_seed_command(message: str) -> str | None:
+    """解析 Seed Audio 指令。返回 ping / usage / 合成文本，非指令返回 None。"""
+    normalized = _strip_wake_prefix(message)
+    if normalized == "seedaudio_ping":
+        return "ping"
+    tts_text = _match_tts_text(message)
+    if tts_text is None:
+        return None
+    if not tts_text:
+        return "usage"
+    return tts_text
 
 
 @register(
@@ -70,9 +83,34 @@ class SeedAudioPlugin(Star):
         if api_status == "未配置":
             logger.warning("[seed-audio] 请在 WebUI 插件配置中填写 api_key")
 
+    @filter.on_llm_request(priority=200)
+    async def intercept_commands_before_agent(
+        self,
+        event: AstrMessageEvent,
+        req: ProviderRequest,
+    ):
+        """WebChat 等场景指令管道未激活时，在 Agent 请求 LLM 前拦截并直接响应。"""
+        _ = req
+        action = _parse_seed_command(event.message_str)
+        if action is None:
+            return
+
+        logger.info(f"[seed-audio] on_llm_request 拦截指令: {action[:40]!r}")
+        if action == "ping":
+            await event.send(event.plain_result(self._ping_text()))
+        elif action == "usage":
+            await event.send(event.plain_result(self._usage_text()))
+        else:
+            async for result in self._reply_audio(event, action):
+                await event.send(result)
+
+        event.stop_event()
+
     @filter.on_llm_request()
     async def inject_tts_policy(self, event: AstrMessageEvent, req: ProviderRequest):
         """引导 Agent 使用 Seed Audio 工具，避免拼接百度等第三方 TTS URL。"""
+        if _parse_seed_command(event.message_str) is not None:
+            return
         if not self.config.get("enable_llm_tool", True):
             return
         if not self.config.get("inject_tts_hint", True):
@@ -166,13 +204,16 @@ class SeedAudioPlugin(Star):
             for result in results:
                 yield result
         event.stop_event()
-        event.should_call_llm(False)
+        event.should_call_llm(True)
 
     @filter.event_message_type(filter.EventMessageType.ALL, priority=100)
     async def intercept_seed_commands(self, event: AstrMessageEvent):
-        """兜底拦截 Seed Audio 指令，兼容 WebChat 等未匹配 @filter.command 的场景。"""
-        normalized = _strip_wake_prefix(event.message_str)
-        if normalized == "seedaudio_ping":
+        """兜底：消息管道激活时拦截 Seed Audio 指令。"""
+        action = _parse_seed_command(event.message_str)
+        if action is None:
+            return
+
+        if action == "ping":
             async for result in self._finish_command(
                 event,
                 [event.plain_result(self._ping_text())],
@@ -180,11 +221,7 @@ class SeedAudioPlugin(Star):
                 yield result
             return
 
-        tts_text = _match_tts_text(event.message_str)
-        if tts_text is None:
-            return
-
-        if not tts_text:
+        if action == "usage":
             async for result in self._finish_command(
                 event,
                 [event.plain_result(self._usage_text())],
@@ -194,7 +231,7 @@ class SeedAudioPlugin(Star):
 
         async for result in self._finish_command(
             event,
-            self._reply_audio(event, tts_text),
+            self._reply_audio(event, action),
         ):
             yield result
 
